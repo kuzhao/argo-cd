@@ -222,7 +222,7 @@ func getRestConfig(pathOpts *clientcmd.PathOptions, ctxName string) (*rest.Confi
 		Context: *clstContext,
 	}
 
-	clientConfig := clientcmd.NewDefaultClientConfig(*config, &overrides)
+	clientConfig := cli.WithConnectionLogging(clientcmd.NewDefaultClientConfig(*config, &overrides))
 	conf, err := clientConfig.ClientConfig()
 	if err != nil {
 		return nil, err

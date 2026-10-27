@@ -18,6 +18,7 @@ import (
 	"k8s.io/kubectl/pkg/util/podutils"
 	"k8s.io/streaming/pkg/httpstream"
 
+	"github.com/argoproj/argo-cd/v3/util/cli"
 	utilio "github.com/argoproj/argo-cd/v3/util/io"
 )
 
@@ -44,7 +45,7 @@ func PortForward(targetPort int, namespace string, overrides *clientcmd.ConfigOv
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	loadingRules.DefaultClientConfig = &clientcmd.DefaultClientConfig
 	clientConfig := clientcmd.NewInteractiveDeferredLoadingClientConfig(loadingRules, overrides, os.Stdin)
-	config, err := clientConfig.ClientConfig()
+	config, err := cli.WithConnectionLogging(clientConfig).ClientConfig()
 	if err != nil {
 		return -1, err
 	}

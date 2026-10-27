@@ -221,7 +221,7 @@ func MaybeStartLocalServer(ctx context.Context, clientOpts *apiclient.ClientOpti
 		utilio.Close(ln)
 	}
 
-	restConfig, err := clientConfig.ClientConfig()
+	restConfig, err := cli.WithConnectionLogging(clientConfig).ClientConfig()
 	if err != nil {
 		return nil, fmt.Errorf("error creating client config: %w", err)
 	}

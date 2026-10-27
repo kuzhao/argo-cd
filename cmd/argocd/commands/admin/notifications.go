@@ -11,6 +11,7 @@ import (
 
 	"github.com/argoproj/argo-cd/v3/common"
 	"github.com/argoproj/argo-cd/v3/reposerver/apiclient"
+	"github.com/argoproj/argo-cd/v3/util/cli"
 	"github.com/argoproj/argo-cd/v3/util/env"
 	service "github.com/argoproj/argo-cd/v3/util/notification/argocd"
 	"github.com/argoproj/argo-cd/v3/util/notification/settings"
@@ -41,7 +42,7 @@ func NewNotificationsCommand() *cobra.Command {
 		applications,
 		settings.GetFactorySettingsForCLI(func() service.Service { return argocdService }, "argocd-notifications-secret", "argocd-notifications-cm", false),
 		func(_ context.Context, clientConfig clientcmd.ClientConfig) {
-			k8sCfg, err := clientConfig.ClientConfig()
+			k8sCfg, err := cli.WithConnectionLogging(clientConfig).ClientConfig()
 			if err != nil {
 				log.Fatalf("Failed to parse k8s config: %v", err)
 			}

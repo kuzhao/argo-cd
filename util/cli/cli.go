@@ -9,6 +9,7 @@ import (
 	stderrors "errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -22,6 +23,7 @@ import (
 	"github.com/spf13/pflag"
 	terminal "golang.org/x/term"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/util/term"
@@ -78,7 +80,37 @@ func AddKubectlFlagsToSet(flags *pflag.FlagSet) clientcmd.ClientConfig {
 	kflags := clientcmd.RecommendedConfigOverrideFlags("")
 	flags.StringVar(&loadingRules.ExplicitPath, "kubeconfig", "", "Path to a kube config. Only required if out-of-cluster")
 	clientcmd.BindOverrideFlags(&overrides, flags, kflags)
-	return clientcmd.NewInteractiveDeferredLoadingClientConfig(loadingRules, &overrides, os.Stdin)
+	return WithConnectionLogging(clientcmd.NewInteractiveDeferredLoadingClientConfig(loadingRules, &overrides, os.Stdin))
+}
+
+// WithConnectionLogging reports the Kubernetes server to stderr when resolving a client configuration.
+func WithConnectionLogging(config clientcmd.ClientConfig) clientcmd.ClientConfig {
+	if _, ok := config.(*connectionLoggingClientConfig); ok {
+		return config
+	}
+	return &connectionLoggingClientConfig{clientConfig: config}
+}
+
+type clientConfig = clientcmd.ClientConfig
+
+type connectionLoggingClientConfig struct {
+	clientConfig
+}
+
+func (c *connectionLoggingClientConfig) ClientConfig() (*rest.Config, error) {
+	config, err := c.clientConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	server := "<invalid server URL>"
+	if target, err := url.Parse(config.Host); err == nil {
+		target.User = nil
+		target.RawQuery = ""
+		target.Fragment = ""
+		server = target.String()
+	}
+	fmt.Fprintf(os.Stderr, "Connecting to Kubernetes server %s\n", server)
+	return config, nil
 }
 
 // PromptCredentials is a helper to prompt the user for a username and password (unless already supplied)

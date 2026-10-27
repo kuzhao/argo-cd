@@ -602,7 +602,7 @@ func NewGenClusterConfigCommand(pathOpts *clientcmd.PathOptions) *cobra.Command 
 			overrides := clientcmd.ConfigOverrides{
 				Context: *clstContext,
 			}
-			clientConfig := clientcmd.NewDefaultClientConfig(*cfgAccess, &overrides)
+			clientConfig := cli.WithConnectionLogging(clientcmd.NewDefaultClientConfig(*cfgAccess, &overrides))
 			conf, err := clientConfig.ClientConfig()
 			errors.CheckError(err)
 			// Seed a minimal in-memory Argo CD environment so settings retrieval succeeds

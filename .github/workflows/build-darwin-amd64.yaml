@@ -1,0 +1,40 @@
+name: Build Darwin AMD64 CLI
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        if: ${{ vars.disable_harden_runner != 'true' }}
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Setup Golang
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          # renovate: datasource=golang-version packageName=golang
+          go-version: '1.26.10'
+      - name: Build macOS Intel CLI
+        run: make GOOS=darwin GOARCH=amd64 CGO_FLAG=0 BIN_NAME=argocd-darwin-amd64 argocd-all
+      - name: Package binary and checksum
+        working-directory: dist
+        run: |
+          sha256sum argocd-darwin-amd64 > argocd-darwin-amd64.sha256
+          tar -czf argocd-darwin-amd64.tar.gz argocd-darwin-amd64 argocd-darwin-amd64.sha256
+      - name: Upload macOS Intel CLI
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: argocd-darwin-amd64
+          path: dist/argocd-darwin-amd64.tar.gz
+          if-no-files-found: error
